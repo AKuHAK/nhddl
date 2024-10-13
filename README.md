@@ -1,7 +1,7 @@
 # NHDDL — a PS2 exFAT BDM launcher for Neutrino
 
 NHDDL is a memory card-based launcher that scans FAT-formatted BDM devices for ISO files,
-lists them and boots selected ISO via Neutrino.  
+lists them and boots selected ISO via Neutrino.
 
 It displays visual Game ID to trigger per-game settings on the Pixel FX line of products and writes to memory card history file before launching the title, triggering per-title memory cards on SD2PSX and MemCard PRO 2.
 
@@ -11,14 +11,14 @@ I have a SCPH-70000 PS2 with internal IDE—microSD mod and RetroGEM installed a
 
 ## What this is not
 
-This not an attempt at making a Neutrino-based Open PS2 Loader replacement.  
-It __will not__ boot ISOs from anything other than BDM devices.  
+This not an attempt at making a Neutrino-based Open PS2 Loader replacement.
+It __will not__ boot ISOs from anything other than BDM devices.
 GSM, PADEMU, IGR and other stuff is out-of-scope of this launcher.
 
 ## Usage
 
-Just put the ELF file into Neutrino folder on your memory card and launch it.  
-By default, NHDDL initializes ATA modules and looks for ISOs on internal HDD.  
+Just put the ELF file into Neutrino folder on your memory card and launch it.
+By default, NHDDL initializes ATA modules and looks for ISOs on internal HDD.
 
 ### Supported BDM devices
 
@@ -26,7 +26,7 @@ NHDDL reuses Neutrino modules for BDM support and requires them to be present in
 
 #### ATA
 Make sure that Neutrino `modules` directory contains the following IRX files:
-- `bdm.irx` 
+- `bdm.irx`
 - `isofs.irx`
 - `bdmfs_fatfs.irx`
 - `dev9_ns.irx`
@@ -34,14 +34,14 @@ Make sure that Neutrino `modules` directory contains the following IRX files:
 
 #### MX4SIO
 The following files are required for MX4SIO:
-- `bdm.irx` 
+- `bdm.irx`
 - `isofs.irx`
 - `bdmfs_fatfs.irx`
 - `mx4sio_bd_mini.irx`
 
 #### USB
 The following files are required for USB:
-- `bdm.irx` 
+- `bdm.irx`
 - `isofs.irx`
 - `bdmfs_fatfs.irx`
 - `usbd_mini.irx`
@@ -49,13 +49,13 @@ The following files are required for USB:
 
 #### UDPBD
 The following files are required for UDPBD:
-- `bdm.irx` 
+- `bdm.irx`
 - `isofs.irx`
 - `bdmfs_fatfs.irx`
 - `dev9_ns.irx`
 - `smap_udpbd.irx`
 
-UDPBD module requires PS2 IP address to work.  
+UDPBD module requires PS2 IP address to work.
 NHDDL attempts to retrieve PS2 IP address from the following sources:
 - `udpbd_ip` flag in `nhddl.yml`
 - `SYS-CONF/IPCONFIG.DAT` on the memory card (usually created by w/uLaunchELF)
@@ -71,8 +71,8 @@ There is no distinction between CD and DVD images, both can be placed in any of 
 
 ### Displaying cover art
 
-NHDDL uses the same file naming convention and file format used by OPL.  
-Just put **140x200 PNG** files named `<title ID>_COV.png` (e.g. `SLUS_200.02_COV.png`) into the `ART` directory on the root of your HDD.  
+NHDDL uses the same file naming convention and file format used by OPL.
+Just put **140x200 PNG** files named `<title ID>_COV.png` (e.g. `SLUS_200.02_COV.png`) into the `ART` directory on the root of your HDD.
 If unsure where to get your cover art from, check out the latest version of [OPL Manager](https://oplmanager.com).
 
 ## Configuration files
@@ -81,8 +81,8 @@ NHDDL uses YAML-like files to load and store its configuration options.
 
 ### Launcher configuration file
 
-Launcher configuration is read from the `nhddl.yaml` file, which must be located in the same directory as `nhddl.elf`.  
-This file is completely optional and must be used only to enable 480p or use any device other than ATA.  
+Launcher configuration is read from the `nhddl.yaml` file, which must be located in the same directory as `nhddl.elf`.
+This file is completely optional and must be used only to enable 480p or use any device other than ATA.
 By default, 480p is disabled and the ATA device is used to look for ISO files.
 
 Example of a valid config file:
@@ -99,12 +99,12 @@ NHDDL stores its Neutrino-related config files in `config` directory in the root
 
 #### lastTitle.txt
 
-To point to the last launched title, NHDDL writes the full ISO path to `lastTitle.txt`.  
+To point to the last launched title, NHDDL writes the full ISO path to `lastTitle.txt`.
 This file is created automatically.
 
 #### Argument files
 
-These files store arbitrary arguments that are passed to Neutrino on title launch.  
+These files store arbitrary arguments that are passed to Neutrino on title launch.
 For a list of valid arguments, see Neutrino README.
 
 Example of a valid file:
@@ -129,10 +129,10 @@ Neutrino arguments that need to be applied to every ISO by default are stored in
 
 #### Title-specific files
 
-Neutrino arguments that need to be applied to a specific ISO are loaded from either  
-`<ISO name>.yaml` or `<title ID><anything>.yaml`.  
+Neutrino arguments that need to be applied to a specific ISO are loaded from either
+`<ISO name>.yaml` or `<title ID><anything>.yaml`.
 
-File that has the same name as ISO has the priority.  
+File that has the same name as ISO has the priority.
 NHDDL creates this file automatically when title options are modified and saved in UI.
 
 #### BDM device file structure example
