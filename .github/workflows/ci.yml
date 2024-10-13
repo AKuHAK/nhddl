@@ -1,0 +1,24 @@
+name: CI-compile
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: ghcr.io/ps2homebrew/ps2homebrew:main
+    # instead of "ps2dev/ps2dev:latest" you can use different tags, for example for old projects you can use "ps2dev/ps2dev:v1.0"
+    steps:
+    - uses: actions/checkout@v4
+    - name: Compile project
+      run: |
+        make all
+    # commands for compiling your project
+
+    - name: Upload artifact ELF
+      uses: actions/upload-artifact@v4
+      with:
+        name: nhddl
+        path: |
+          nhddl-*.elf
