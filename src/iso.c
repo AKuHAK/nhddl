@@ -9,7 +9,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <usbhdfsd-common.h>
 
 // Required for mounting and loading ISOs to retrieve Title ID
 #define NEWLIB_PORT_AWARE
@@ -26,34 +25,6 @@ const char *ignoredDirs[] = {
     "nhddl", "APPS", "ART", "CFG", "CHT", "LNG", "THM", "VMC", "XEBPLUS",
 };
 
-void getDeviceInfo(int mode, char *deviceInfo, size_t deviceInfoSize) {
-  char path[16];
-  snprintf(path, sizeof(path), "mass%d:/", mode);
-
-  int dir = fileXioDopen(path);
-  if (dir >= 0) {
-    char driverName[16] = "Unknown"; // Default values in case of failure
-    int deviceNumber = -1;
-
-    // Retrieve the driver name
-    if (fileXioIoctl2(dir, USBMASS_IOCTL_GET_DRIVERNAME, NULL, 0, driverName,
-                      sizeof(driverName) - 1) >= 0)
-      // Null-terminate in case it was not
-      driverName[sizeof(driverName) - 1] = '\0';
-
-    // Retrieve the device number
-    fileXioIoctl2(dir, USBMASS_IOCTL_GET_DEVICE_NUMBER, NULL, 0, &deviceNumber,
-                  sizeof(deviceNumber));
-
-    // Format the final device info string
-    snprintf(deviceInfo, deviceInfoSize, "%s%d", driverName, deviceNumber);
-
-    fileXioDclose(dir); // Close the directory
-  } else {
-    snprintf(deviceInfo, deviceInfoSize, "Device not found");
-  }
-}
-
 void delay(int count) {
   int i;
 
@@ -69,7 +40,6 @@ void delay(int count) {
 TargetList *findISO() {
   int numPaths = 10; // Only check up to "mass9:/"
   DIR *directory = NULL;
-  char deviceInfo[32];
   TargetList *result = malloc(sizeof(TargetList));
   result->total = 0;
   result->first = NULL;
@@ -123,10 +93,6 @@ TargetList *findISO() {
       logString("ERROR: Can't open %s\n", path);
       break;
     }
-
-    // Retrieve device information
-    getDeviceInfo(i, deviceInfo, sizeof(deviceInfo));
-    logString("Device info for %s - %s\n", path, deviceInfo);
 
     // Change directory and search for ISOs
     chdir(path);

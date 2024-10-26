@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
   initOptions(ELF_BASE_PATH);
 
   // Init BDM modules
-  logString("Loading BDM modules...\n");
+  logString("\nLoading BDM modules...\n");
   if ((res = initBDM(ELF_BASE_PATH)) != 0) {
     logString("ERROR: Failed to initialize modules: %d\n", res);
     goto fail;
@@ -131,7 +131,11 @@ ModeType parseMode(const char *modeStr) {
     return MODE_UDPBD;
   if (!strcmp(modeStr, "usb"))
     return MODE_USB;
-  return MODE_ATA;
+  if (!strcmp(modeStr, "ilink"))
+    return MODE_ILINK;
+  if (!strcmp(modeStr, "multi"))
+    return MODE_MULTI;
+  return MODE_MULTI;
 }
 
 // Tries to read SYS-CONF/IPCONFIG.DAT from basePath

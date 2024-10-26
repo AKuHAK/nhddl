@@ -16,7 +16,7 @@
   extern unsigned int size_##mod##_irx
 
 #define IRX_LOAD(mod)                                                                                                                                \
-  logString("\tloading " #mod "\n");                                                                                                                 \
+  logString(#mod "... ");                                                                                                                 \
   if (SifExecModuleBuffer(mod##_irx, size_##mod##_irx, 0, NULL, &iopret) < 0)                                                                        \
     return ret;                                                                                                                                      \
   if (iopret == 1) {                                                                                                                                 \
@@ -106,11 +106,6 @@ const char *ata_modules[] = {
     "modules/ata_bd.irx",
 };
 
-// MX4SIO modules
-const char *mx4sio_modules[] = {
-    "modules/mx4sio_bd_mini.irx",
-};
-
 // UDPBD modules
 const char *udpbd_modules[] = {
     // DEV9
@@ -120,12 +115,36 @@ const char *udpbd_modules[] = {
     "modules/smap_udpbd.irx",
 };
 
+// ATA+UDPBD modules
+const char *ata_udpbd_modules[] = {
+    // DEV9
+    "modules/dev9_ns.irx",
+    // ATA
+    "modules/ata_bd.irx",
+    // SMAP driver.
+    // Treated as a special case because of the IP address argument
+    "modules/smap_udpbd.irx",
+};
+
+// MX4SIO modules
+const char *mx4sio_modules[] = {
+    "modules/mx4sio_bd_mini.irx",
+};
+
 // USB modules
 const char *usb_modules[] = {
     // USBD
     "modules/usbd_mini.irx",
     // USB Mass Storage
     "modules/usbmass_bd_mini.irx",
+};
+
+// iLink modules
+const char *ilink_modules[] = {
+    // iLink
+    "modules/iLinkman.irx",
+    // iLink Mass Storage
+    "modules/IEEE1394_bd_mini.irx",
 };
 
 int initATA(char *basePath) {
@@ -189,6 +208,22 @@ int initUSB(char *basePath) {
   return initExtraModules(basePath, MODULE_COUNT(usb_modules), usb_modules);
 }
 
+int initILINK(char *basePath) {
+  int res = 0;
+  if ((res = initExtraModules(basePath, MODULE_COUNT(bdm_base_modules), bdm_base_modules))) {
+    return res;
+  }
+  return initExtraModules(basePath, MODULE_COUNT(ilink_modules), ilink_modules);
+}
+
+void initMulti(char *basePath) {
+  initExtraModules(basePath, MODULE_COUNT(bdm_base_modules), bdm_base_modules);
+  initExtraModules(basePath, MODULE_COUNT(ata_udpbd_modules), ata_udpbd_modules);
+  initExtraModules(basePath, MODULE_COUNT(usb_modules), usb_modules);
+  initExtraModules(basePath, MODULE_COUNT(ilink_modules), ilink_modules);
+  initExtraModules(basePath, MODULE_COUNT(mx4sio_modules), mx4sio_modules);
+}
+
 // Initializes BDM modules depending on launcher mode
 int initBDM(char *basePath) {
   switch (LAUNCHER_OPTIONS.mode) {
@@ -198,7 +233,13 @@ int initBDM(char *basePath) {
     return initUDPBD(ELF_BASE_PATH, LAUNCHER_OPTIONS.udpbdIp);
   case MODE_USB:
     return initUSB(ELF_BASE_PATH);
+  case MODE_ILINK:
+    return initILINK(ELF_BASE_PATH);
+  case MODE_MULTI:
+    initMulti(ELF_BASE_PATH);
+    return 0;
   default:
-    return initATA(ELF_BASE_PATH);
+    initMulti(ELF_BASE_PATH);
+    return 0;
   }
 }
