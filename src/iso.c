@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <usbhdfsd-common.h>
 
 // Required for mounting and loading ISOs to retrieve Title ID
 #define NEWLIB_PORT_AWARE
@@ -25,34 +26,116 @@ const char *ignoredDirs[] = {
     "nhddl", "APPS", "ART", "CFG", "CHT", "LNG", "THM", "VMC", "XEBPLUS",
 };
 
+void getDeviceInfo(int mode, char *deviceInfo, size_t deviceInfoSize) {
+  char path[16];
+  snprintf(path, sizeof(path), "mass%d:/", mode);
+
+  int dir = fileXioDopen(path);
+  if (dir >= 0) {
+    char driverName[16] = "Unknown"; // Default values in case of failure
+    int deviceNumber = -1;
+
+    // Retrieve the driver name
+    if (fileXioIoctl2(dir, USBMASS_IOCTL_GET_DRIVERNAME, NULL, 0, driverName,
+                      sizeof(driverName) - 1) >= 0)
+      // Null-terminate in case it was not
+      driverName[sizeof(driverName) - 1] = '\0';
+
+    // Retrieve the device number
+    fileXioIoctl2(dir, USBMASS_IOCTL_GET_DEVICE_NUMBER, NULL, 0, &deviceNumber,
+                  sizeof(deviceNumber));
+
+    // Format the final device info string
+    snprintf(deviceInfo, deviceInfoSize, "%s%d", driverName, deviceNumber);
+
+    fileXioDclose(dir); // Close the directory
+  } else {
+    snprintf(deviceInfo, deviceInfoSize, "Device not found");
+  }
+}
+
+void delay(int count) {
+  int i;
+
+  for (i = 0; i < count; i++) {
+    int ret = 0x01000000;
+    while (ret--)
+      asm("nop\nnop\nnop\nnop");
+  }
+}
+
 // Looks for ISO images in searchDirs.
 // Returns NULL if no targets were found or an error occurs
 TargetList *findISO() {
-  DIR *directory;
-  // Try to open directory, giving a chance to IOP modules to init
-  for (int i = 0; i < 1000; i++) {
-    directory = opendir(STORAGE_BASE_PATH);
-    if (directory != NULL)
-      break;
-    nopdelay();
-  }
-  // Check if the directory can be opened
-  if (directory == NULL) {
-    logString("ERROR: Can't open %s\n", STORAGE_BASE_PATH);
-    return NULL;
-  }
-
+  int numPaths = 10; // Only check up to "mass9:/"
+  DIR *directory = NULL;
+  char deviceInfo[32];
   TargetList *result = malloc(sizeof(TargetList));
   result->total = 0;
   result->first = NULL;
   result->last = NULL;
-  chdir(STORAGE_BASE_PATH);
-  if (_findISO(directory, result)) {
-    free(result);
-    closedir(directory);
+
+  // init fast loop for mass0 as mass0 is always available
+  for (int i = 0; i < 1000; i++) {
+    directory = opendir("mass0:/");
+    if (directory != NULL){
+      closedir(directory);
+      break;
+    }
+    nopdelay();
+  }
+
+  if (directory == NULL) {
+    logString("ERROR: Can't open mass0:/\n");
     return NULL;
   }
-  closedir(directory);
+
+  // init slow loop for other devices masss%d, slow loop because we dont know if they does exist
+  for (int i = 1; i < numPaths; i++) {
+    char path[10];
+    snprintf(path, sizeof(path), "mass%d:/", i);
+
+    for (int retry = 0; retry < 2; retry++) {
+      delay(2);
+      directory = opendir(path);
+      if (directory != NULL){
+        closedir(directory);
+        break;
+      }
+    }
+
+    if (directory == NULL) {
+      numPaths = i;
+      logString("Device count %d\n", numPaths);
+      break;
+    }
+  }
+
+  for (int i = 0; i < numPaths; i++) {
+    char path[10];
+    snprintf(path, sizeof(path), "mass%d:/", i);
+
+    directory = opendir(path);
+
+    // If unable to open directory, exit early as next paths are unlikely to be
+    // available
+    if (directory == NULL) {
+      logString("ERROR: Can't open %s\n", path);
+      break;
+    }
+
+    // Retrieve device information
+    getDeviceInfo(i, deviceInfo, sizeof(deviceInfo));
+    logString("Device info for %s - %s\n", path, deviceInfo);
+
+    // Change directory and search for ISOs
+    chdir(path);
+    printf("Searching %s for ISOs...\n", path);
+    _findISO(directory, result);
+    printf("Found %d ISOs\n", result->total);
+    closedir(directory);
+    printf("done with %s\n", path);
+  }
 
   processTitleID(result);
   return result;
